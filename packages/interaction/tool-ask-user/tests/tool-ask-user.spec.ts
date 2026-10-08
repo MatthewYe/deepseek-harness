@@ -666,6 +666,60 @@ describe('ask_user_question tool', () => {
     })
   })
 
+  it('rejects an unknown question key before showing any panel (legacy mode)', async () => {
+    const ctx = await setup({ mode: 'legacy' })
+    const answerer = vi.fn(async (): Promise<AskUserQuestionAnswer> => ({ answers: [] }))
+    registerQuestionAnswerer(ctx, { ask: answerer })
+
+    // A model that emits a corrupted key (real incident: "options':" instead
+    // of "options") must get an explicit error and retry, never a silently
+    // degraded text-only panel.
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('ask-unknown-question-key'),
+      name: 'ask_user_question',
+      arguments: { questions: [{ id: 'scope', question: 'Choose a scope.', "options'": [{ label: 'A' }] }] },
+    })
+
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('not a declared property')
+    expect(answerer).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown option key before showing any panel (legacy mode)', async () => {
+    const ctx = await setup({ mode: 'legacy' })
+    const answerer = vi.fn(async (): Promise<AskUserQuestionAnswer> => ({ answers: [] }))
+    registerQuestionAnswerer(ctx, { ask: answerer })
+
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('ask-unknown-option-key'),
+      name: 'ask_user_question',
+      arguments: { questions: [{ id: 'scope', question: 'Choose a scope.', options: [{ label: 'A', recommended: true }] }] },
+    })
+
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('not a declared property')
+    expect(answerer).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unknown question key before showing any panel (timed mode)', async () => {
+    const ctx = await setup({ mode: 'timed', timeout: -1 })
+    const answerer = vi.fn(async (): Promise<AskUserQuestionAnswer> => ({ answers: [] }))
+    registerQuestionAnswerer(ctx, { ask: answerer })
+
+    const result = await ctx.tools.execute({
+      signal: testToolSignal,
+      callId: ToolCallId('ask-unknown-key-timed'),
+      name: 'ask_user_question',
+      arguments: { questions: [{ id: 'scope', question: 'Choose a scope.', "header'": 'Oops' }], timeout: -1 },
+    })
+
+    expect(result.isError).toBe(true)
+    expect(JSON.stringify(result.content)).toContain('not a declared property')
+    expect(answerer).not.toHaveBeenCalled()
+  })
+
   it('unregisters the tool when its plugin fiber is disposed', async () => {
     const ctx = new Context()
     await ctx.plugin(SystemPrompt)

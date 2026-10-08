@@ -113,7 +113,7 @@ export function registerTimedAskUser(ctx: Context, timeout = 120): void {
         description: 'Questions to ask the user.',
         items: {
           type: 'object',
-          additionalProperties: true,
+          additionalProperties: false,
           properties: {
             id: { type: 'string', required: true, description: 'Stable id for this question; echoed in the answer.' },
             question: { type: 'string', required: true, description: 'The specific question to ask the user.' },
@@ -126,7 +126,7 @@ export function registerTimedAskUser(ctx: Context, timeout = 120): void {
               description: 'Optional choices to show the user. If you recommend one, put it first and append "(Recommended)" to that label.',
               items: {
                 type: 'object',
-                additionalProperties: true,
+                additionalProperties: false,
                 properties: {
                   label: { type: 'string', required: true, description: 'Short user-facing option label.' },
                   description: { type: 'string', description: 'One sentence explaining the tradeoff or impact.' },
